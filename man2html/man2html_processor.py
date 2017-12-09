@@ -1,8 +1,9 @@
-import io
+from args_parser import ArgsParser
 
 
 class Man2HtmlProcessor(object):
-    def __init__(self):
+    def __init__(self, args_parser: ArgsParser):
+        self.args_parser = args_parser
         self.commands = dict()
         self.string_builder = []
 
@@ -11,7 +12,7 @@ class Man2HtmlProcessor(object):
         if line is None:
             raise ValueError("line should not be null")
 
-        man_args = self.__parse_man_args(line)
+        man_args = self.args_parser.parse_args(line)
 
         if len(man_args) == 0:
             return
@@ -27,10 +28,3 @@ class Man2HtmlProcessor(object):
 
     def translate(self):
         pass
-
-    @staticmethod
-    def __parse_man_args(line: str):
-    '''Парсит строку на аргументы Man pages.
-    Двойные кавычки окружают текст, который нужно считать одним аргументом.
-    Символ обратного слеша(\) экранирует действие двойных кавычек,
-    разделяющее свойство пробельных символов'''
