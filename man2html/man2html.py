@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 
-from man2html_processor import Man2HtmlProcessor
+from man2html_translator import Man2HtmlTranslator
 
 __version__ = "1.0"
 __author__ = 'Aidar Islamov'
@@ -44,7 +44,7 @@ def main():
     log.setFormatter(logging.Formatter(
         "%(name)s: %(asctime)s [%(levelname)s] %(message)s"))
 
-    translator = Man2HtmlProcessor()
+    translator = Man2HtmlTranslator()
 
     try:
         input_stream = open(args.input_file, encoding=args.encoding)
