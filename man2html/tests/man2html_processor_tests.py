@@ -50,7 +50,7 @@ class Man2HtmlProcessorTests(unittest.TestCase):
         args = ArgsParser().parse_args(line)
         state = ManProcessState()
 
-        man2html_translator.Man2HtmlTranslator.handle_th(state, [],
+        man2html_translator.Man2HtmlTranslator.handle_TH(state, [],
                                                          *(args[1:]))
 
         self.assertEqual("title", state.title)

@@ -4,7 +4,11 @@ class ArgsParser(object):
         self.DOUBLE_QUOTE = '"'
 
         self.ESCAPED_MEANING = {
-            'e': '\\'
+            'e': '\\',
+            '|': "",  # "\u2006",
+            '-': "\u2212",
+            ' ': " ",
+            'c': ""
         }
 
     def parse_args(self, line: str):
@@ -21,6 +25,7 @@ class ArgsParser(object):
         can_open_quotes = True
         for char in line:
             if escaped:
+                escaped = False
                 if char in self.ESCAPED_MEANING.keys():
                     current_arg_builder.append(self.ESCAPED_MEANING[char])
                     continue

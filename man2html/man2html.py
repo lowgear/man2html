@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 
+from args_parser import ArgsParser
 from man2html_translator import Man2HtmlTranslator
 
 __version__ = "1.0"
@@ -44,7 +45,7 @@ def main():
     log.setFormatter(logging.Formatter(
         "%(name)s: %(asctime)s [%(levelname)s] %(message)s"))
 
-    translator = Man2HtmlTranslator()
+    translator = Man2HtmlTranslator(ArgsParser())
 
     try:
         input_stream = open(args.input_file, encoding=args.encoding)
@@ -55,15 +56,16 @@ def main():
         pass  # todo log input OK
 
     with input_stream as f:
-        for line in f:
-            try:
-                translator.consume(line)
-            except Exception as e:
-                # todo log error
-                print("Some error happened\n{}".format(e), file=sys.stderr)
-                sys.exit(ERROR_EXCEPTION)
+        try:
+            result = translator.translate(f)
+        except Exception as e:
+            # todo log error
+            print("Some error happened\n{}".format(e), file=sys.stderr)
+            sys.exit(ERROR_EXCEPTION)
+        else:
+            pass  # todo log translation OK
 
-    print(translator.translate(), file=sys.stdout)
+    print(result, file=sys.stdout)
 
     # todo log finished OK
 
