@@ -1,6 +1,6 @@
 import unittest
 
-from man_process_state import ManProcessState
+from core.man_process_state import ManProcessState
 
 
 class ManProcessStateTests(unittest.TestCase):
@@ -12,3 +12,7 @@ class ManProcessStateTests(unittest.TestCase):
         self.assertEqual("", state.date)
         self.assertEqual("", state.source)
         self.assertEqual("", state.manual)
+
+
+if __name__ == "__main__":
+    unittest.main()

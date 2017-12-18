@@ -4,8 +4,8 @@ import dominate
 from dominate import document
 from dominate.tags import *
 
-from args_parser import ArgsParser
-from man_process_state import ManProcessState
+from core.args_parser import ArgsParser
+from core.man_process_state import ManProcessState
 
 
 def now():

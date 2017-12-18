@@ -1,6 +1,6 @@
 import unittest
 
-from args_parser import ArgsParser
+from core.args_parser import ArgsParser
 
 
 class ArgsParserTests(unittest.TestCase):

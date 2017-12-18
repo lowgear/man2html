@@ -3,9 +3,9 @@ import unittest
 import datetime
 import dominate
 
-from args_parser import ArgsParser
-import man2html_translator
-from man_process_state import ManProcessState
+from core.args_parser import ArgsParser
+import core.man2html_translator as man2html_translator
+from core.man_process_state import ManProcessState
 from dominate.tags import *
 
 
@@ -70,9 +70,11 @@ class Man2HtmlProcessorTests(unittest.TestCase):
 
     def test_sh_macros_adds_h2_tag_with_corresponding_content(self):
         lines = [".SH \"SECTION NAME\""]
-        expected = self.man_page_html([h2("SECTION NAME")])
+        expected = h2("SECTION NAME").render()
+        nodes = []
 
-        actual = self.translator.translate(lines)
+        self.translator.handle_SH(None, nodes, "SECTION NAME")
+        actual = nodes[0].render()
 
         self.assertEqual(expected, actual)
 
