@@ -99,3 +99,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+reference/
+.idea/
+testing_directory/
