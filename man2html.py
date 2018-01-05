@@ -82,6 +82,11 @@ def parse_args():
         help="Output file path. stdout of not specified")
 
     parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Output file path. stdout of not specified")
+
+    parser.add_argument(
         "--output-encoding",
         metavar='OUTPUT_ENCODING',
         type=str,
@@ -110,7 +115,7 @@ def main():
     log.setFormatter(logging.Formatter(
         "%(name)s: %(asctime)s [%(levelname)s] %(message)s"))
 
-    translator = Man2HtmlTranslator(ArgsParser())
+    translator = Man2HtmlTranslator(ArgsParser(), strict_mode=args.strict)
 
     input_file = get_file_from_man_path(args.name, args.section)
     if not input_file:
@@ -126,10 +131,13 @@ def main():
     with input_stream as f:
         try:
             result = translator.translate(f)
+        except NotImplementedError as e:
+            print("Not implemented:\n{0}".format(e), file=sys.stderr)
+            sys.exit(ERROR_EXCEPTION)
         except Exception as e:
             # todo log error
-            print("Some error happened\n{}".format(e), file=sys.stderr)
-            sys.exit(ERROR_EXCEPTION)
+            print("Some error happened", file=sys.stderr)
+            raise e
         else:
             pass  # todo log translation OK
 

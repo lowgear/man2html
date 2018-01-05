@@ -18,7 +18,6 @@ class ArgsParser(object):
         текст, который нужно считать одним аргументом. Символ обратного
         слеша(\) экранирует действие двойных кавычек, разделяющее свойство
         пробельных символов'''
-        args = []
         current_arg_builder = []
         escaped = False
         double_quoted = False
@@ -37,7 +36,7 @@ class ArgsParser(object):
 
             if char == self.DOUBLE_QUOTE:
                 if double_quoted:
-                    args.append(''.join(current_arg_builder))
+                    yield ''.join(current_arg_builder)
                     current_arg_builder.clear()
                     double_quoted = False
                     continue
@@ -49,7 +48,7 @@ class ArgsParser(object):
 
             if not double_quoted and char.isspace():
                 if len(current_arg_builder):
-                    args.append(''.join(current_arg_builder))
+                    yield ''.join(current_arg_builder)
                     current_arg_builder.clear()
                 can_open_quotes = True
                 continue
@@ -61,7 +60,5 @@ class ArgsParser(object):
             current_arg_builder = [self.DOUBLE_QUOTE] + current_arg_builder
 
         if len(current_arg_builder):
-            args.append(''.join(current_arg_builder))
+            yield ''.join(current_arg_builder)
             current_arg_builder.clear()
-
-        return args
