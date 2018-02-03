@@ -39,6 +39,7 @@ def checks_for_word_break(func):
     return result
 
 
+# noinspection PyMethodMayBeStatic
 class Man2HtmlTranslator(object):
     def __init__(self, args_parser: ArgsParser, strict_mode=True):
         self.args_parser = args_parser
@@ -77,14 +78,15 @@ class Man2HtmlTranslator(object):
             doc.add('\n')
             doc.add(node)
 
+    # noinspection PyUnusedLocal
     def add_footer(self, doc: document, state: ManProcessState):
         doc.add(hr())
         current_time = now()
         doc.add(current_time.strftime("Time: %H:%M:%S %Z, %B %d, %Y"))
 
     def translate(self, lines):
-        '''Принять строки разметки man и вернуть рузультат преобразования в
-        html'''
+        """Принять строки разметки man и вернуть рузультат преобразования в
+        html"""
         if lines is None:
             raise ValueError("lines should not be null")
 
@@ -101,6 +103,7 @@ class Man2HtmlTranslator(object):
         elif mode == "t":
             state.translation_mode = TranslationModes.TROFF
 
+    # noinspection PyPep8Naming
     def handle_TH(self, state: ManProcessState, man_title: str = "",
                   man_section: str = "", date: str = "", man_source: str = "",
                   manual: str = "", *_, **__):
@@ -111,10 +114,12 @@ class Man2HtmlTranslator(object):
         state.source = man_source
         state.manual = manual
 
+    # noinspection PyPep8Naming
     def handle_SH(self, state: ManProcessState, *args, **__):
-        """Заголовой."""
+        """Заголовок."""
         state.nodes.append(h2(" ".join(args)))
 
+    # noinspection PyPep8Naming
     def handle_SS(self, state: ManProcessState, *args, **__):
         """Подзаголовок."""
         state.nodes.append(h3(" ".join(args)))
@@ -123,31 +128,37 @@ class Man2HtmlTranslator(object):
         """Строка с комментарием."""
         pass
 
+    # noinspection PyPep8Naming
     @checks_for_word_break
     def handle_B(self, state: ManProcessState, *args, **__):
         """Bold."""
         state.paragraph.add(b(args))
 
+    # noinspection PyPep8Naming
     @checks_for_word_break
     def handle_I(self, state: ManProcessState, *args, **__):
         """Italic."""
         state.paragraph.add(i(args))
 
+    # noinspection PyPep8Naming
     @checks_for_word_break
     def handle_BR(self, state: ManProcessState, *args, **__):
         """Чередование Bold и Roman."""
         state.paragraph.add(alternate_map(b, span, args))
 
+    # noinspection PyPep8Naming
     @checks_for_word_break
     def handle_RB(self, state: ManProcessState, *args, **__):
         """Чередование Roman и Bold."""
         state.paragraph.add(alternate_map(span, b, args))
 
+    # noinspection PyPep8Naming
     @checks_for_word_break
     def handle_IR(self, state: ManProcessState, *args, **__):
         """Чередование Italic и Roman."""
         state.paragraph.add(alternate_map(i, identical, args))
 
+    # noinspection PyPep8Naming
     @checks_for_word_break
     def handle_RI(self, state: ManProcessState, *args, **__):
         """Чередование Roman и Italic"""
@@ -188,10 +199,12 @@ class Man2HtmlTranslator(object):
             pass
             # raise NotImplementedError()  # todo
 
+    # noinspection PyPep8Naming
     def handle_PP(self, state: ManProcessState, *_, **__):
         """Отступ перед первой строкой параграфа."""
         state.paragraph.attributes["style"] += ";text-indent:4em"
 
+    # noinspection PyPep8Naming
     def handle_TP(self, state: ManProcessState, indent=None, *_, **__):
         """Тегированный параграф."""
         if indent is None:
@@ -199,7 +212,7 @@ class Man2HtmlTranslator(object):
         else:
             try:
                 indent = int(indent)
-            except ValueError as e:
+            except ValueError:  # todo log
                 indent = 5
 
         prev_nodes_num = len(state.nodes)
@@ -230,6 +243,7 @@ class Man2HtmlTranslator(object):
             element.add(par)
             state.nodes.insert(prev_nodes_num, element)
 
+    # noinspection PyPep8Naming
     def handle_PD(self, state: ManProcessState, indent=None, *_, **__):
         """Отступ перед первой строкой параграфа."""
         if indent is None:
@@ -238,15 +252,16 @@ class Man2HtmlTranslator(object):
         else:
             try:
                 indent = float(indent)
-            except ValueError as e:
+            except ValueError:  # todo log
                 state.inter_paragraph_indent = \
                     DEFAULT_SETTINGS[
                         state.translation_mode].inter_paragraph_indent
         state.inter_paragraph_indent = indent
 
+    # noinspection PyPep8Naming
     def handle_SM(self, state: ManProcessState, text="", *_, **__):
         """Отступ перед первой строкой параграфа."""
-        pass
+        pass  # todo
 
     def apply_default_setting(self):
         self.commands[".\\\""] = Command(self.handle_comment, False)

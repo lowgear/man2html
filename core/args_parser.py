@@ -6,7 +6,7 @@ class ArgsParser(object):
         self.ESCAPED_MEANING = {
             'e': '\\',
             '|': "",  # "\u2006",
-            '-': "\u2212",
+            '-': "&#x2212;",
             ' ': " ",
             'c': ""
         }
