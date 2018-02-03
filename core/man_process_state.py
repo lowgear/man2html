@@ -21,6 +21,7 @@ class ManProcessState(object):
         self.inter_paragraph_indent = DEFAULT_SETTINGS[
             self.translation_mode].inter_paragraph_indent
         self.reset_paragraph()
+        self.registers = dict()
 
     def has_more_lines(self):
         return self.index < len(self.lines)
@@ -42,6 +43,7 @@ class ManProcessState(object):
         self.reset_paragraph()
 
     def reset_paragraph(self):
+        # noinspection PyAttributeOutsideInit
         self.paragraph = p()
         self.paragraph.attributes["style"] = ";".join([
             before_margin_property + ":" +

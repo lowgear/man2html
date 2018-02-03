@@ -6,6 +6,7 @@ class Setting():
         self.inter_paragraph_indent = inter_paragraph_indent
 
 
+# noinspection SpellCheckingInspection
 class TranslationModes(Enum):
     TROFF = auto()
     NROFF = auto()

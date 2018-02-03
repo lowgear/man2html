@@ -189,15 +189,8 @@ class Man2HtmlTranslator(object):
     def handle_if(self, state: ManProcessState, condition, *args,
                   **__):
         """Условный оператор."""
-        if condition == "n":
-            if state.translation_mode == TranslationModes.NROFF:
-                self.accept_line(state, *args)
-        elif condition == "t":
-            if state.translation_mode == TranslationModes.TROFF:
-                self.accept_line(state, *args)
-        else:
-            pass
-            # raise NotImplementedError()  # todo
+        if self._calc_condition(state, condition):
+            self.accept_line(state, *args)
 
     # noinspection PyPep8Naming
     def handle_PP(self, state: ManProcessState, *_, **__):
@@ -315,6 +308,18 @@ class Man2HtmlTranslator(object):
     @checks_for_word_break
     def default_handle(self, state, *args):
         state.paragraph.add(" ".join(args))
+
+    def _calc_condition(self, state: ManProcessState, condition):
+        if condition[0] == '!':
+            return not self._calc_condition(state, condition[1:])
+        if condition == "n":
+            return state.translation_mode == TranslationModes.NROFF
+        if condition == "t":
+            return state.translation_mode == TranslationModes.TROFF
+        if condition[0] == 'r':
+            return condition[1:] in state.registers.keys()
+
+        raise NotImplementedError()  # todo
 
 
 class Command:
