@@ -4,15 +4,6 @@ ESCAPE_CHAR = '\\'
 class ArgsParser(object):
     DOUBLE_QUOTE = '"'
 
-    def __init__(self):
-        self.ESCAPED_MEANING = {
-            'e': '\\',
-            '|': "",  # "\u2006",
-            '-': "-",
-            ' ': " ",
-            'c': ""
-        }
-
     def parse_args(self, line: str):
         """Парсит строку на аргументы Man pages. Двойные кавычки,
         первая из которых должна быть либо первым символом строки,
