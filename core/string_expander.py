@@ -21,10 +21,10 @@ def expand_arg(state: ManProcessState, arg: str):
     for char in arg:
         if escaped:
             escaped = False
-            # if char in self.ESCAPED_MEANING.keys():
-            #     current_arg_builder.append(self.ESCAPED_MEANING[char])
-            #     continue
-            # current_arg_builder.append(self.ESCAPE_CHAR)
+            if char in ESCAPED_MEANING.keys():
+                builder.append(ESCAPED_MEANING[char])
+                continue
+
             builder.append(ESCAPE_CHAR + char)
             continue
 

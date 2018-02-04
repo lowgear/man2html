@@ -18,10 +18,6 @@ class ArgsParser(object):
         for char in line:
             if escaped:
                 escaped = False
-                # if char in self.ESCAPED_MEANING.keys():
-                #     current_arg_builder.append(self.ESCAPED_MEANING[char])
-                #     continue
-                # current_arg_builder.append(self.ESCAPE_CHAR)
                 current_arg_builder.append(ESCAPE_CHAR + char)
                 continue
 
