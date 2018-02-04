@@ -190,7 +190,7 @@ class Man2HtmlTranslator(object):
                   **__):
         """Условный оператор."""
         if self._calc_condition(state, condition):
-            self.accept_line(state, *args)
+            self.accept_line(state, args)
 
     # noinspection PyPep8Naming
     def handle_PP(self, state: ManProcessState, *_, **__):
@@ -215,8 +215,7 @@ class Man2HtmlTranslator(object):
         state.reset_paragraph()
 
         while state.has_more_lines():
-            cur_args = self.args_parser.parse_args(state.peek_line())
-            arg = first(cur_args)
+            arg = self.extract_command(state)
             if arg is not None and arg in self.commands.keys() and \
                     self.commands[arg].breaks:
                 break
@@ -235,6 +234,10 @@ class Man2HtmlTranslator(object):
             element.add(tag)
             element.add(par)
             state.nodes.insert(prev_nodes_num, element)
+
+    def extract_command(self, state):
+        cur_args = self.args_parser.parse_args(state.peek_line())
+        return first(cur_args)
 
     # noinspection PyPep8Naming
     def handle_PD(self, state: ManProcessState, indent=None, *_, **__):
@@ -280,14 +283,16 @@ class Man2HtmlTranslator(object):
     def register_macros(self, macros_name: str, macros_lines: list):
         pass  # todo actually register macros
 
-    def accept_line(self, state: ManProcessState, *args):
-        if empty(args):
+    def accept_line(self, state: ManProcessState, args: list=None):
+        if args is None:
             line = state.pop_line()
             args = list(self.args_parser.parse_args(line))
 
-        if len(args) == 0:
+        if empty(args):
             state.close_paragraph()
             return
+
+        self._expand_args(state, args)
 
         if args[0] not in self.commands.keys():
             if args[0][0] == '.':
@@ -319,7 +324,12 @@ class Man2HtmlTranslator(object):
         if condition[0] == 'r':
             return condition[1:] in state.registers.keys()
 
-        raise NotImplementedError()  # todo
+        return False
+        # raise NotImplementedError()  # todo
+
+    def _expand_args(self, state: ManProcessState, args: list):
+        for i in range(len(args)):
+            args[i] = expand_arg(state, args[i])
 
 
 class Command:
