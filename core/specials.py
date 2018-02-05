@@ -1,6 +1,7 @@
 from dominate.tags import p as _p
 
 
+# todo is it needed anymore?
 def _first_char(arg):
     if isinstance(arg, str):
         if len(arg) == 0:
@@ -10,6 +11,7 @@ def _first_char(arg):
         pass
 
 
+# todo is it needed anymore?
 class p(_p):
     def add(self, *args):
         for arg in args:

@@ -6,9 +6,10 @@ from dominate import document
 from dominate.tags import *
 
 from core.args_parser import ArgsParser
+from core.html_utils import escape
 from core.man_process_state import ManProcessState
 from core.settings import DEFAULT_SETTINGS, TranslationModes
-from core.string_expander import expand_arg
+from core.string_expander import expand_string
 from core.utility import empty, first
 
 dot_like_punctuation = ',.?!;:'
@@ -35,21 +36,28 @@ def identical(x):
 def checks_for_word_break(func):
     # noinspection PyUnusedLocal
     @wraps(func)
-    def result(self, state, *args, **kwargs):
+    def wrapped(self, state, *args, **kwargs):
         if not empty(args) and args[0][0] not in dot_like_punctuation:
             state.paragraph.add(' ')
         return func(state, *args, **kwargs)
 
-    return result
+    return wrapped
 
 
 def tag_from_raw_string(func):
     @wraps(func)
-    def result(*args, **__):
+    def wrapped(*args, **__):
         tag = func()
         tag.add_raw_string(" ".join(args))
         return tag
-    return result
+    return wrapped
+
+
+def escapes_args(func):
+    @wraps(func)
+    def wrapped(self, state: ManProcessState, *args, **kwargs):
+        return func(self, state, *map(escape, args), **kwargs)
+    return wrapped
 
 
 # noinspection PyMethodMayBeStatic
@@ -142,18 +150,21 @@ class Man2HtmlTranslator(object):
         pass
 
     # noinspection PyPep8Naming,PyMethodParameters
+    @escapes_args
     @checks_for_word_break
     def handle_B(state: ManProcessState, *args, **__):
         """Bold."""
         return state.paragraph.add(tag_from_raw_string(b)(*args))
 
     # noinspection PyPep8Naming,PyMethodParameters
+    @escapes_args
     @checks_for_word_break
     def handle_I(state: ManProcessState, *args, **__):
         """Italic."""
         return state.paragraph.add(tag_from_raw_string(i)(*args))
 
     # noinspection PyPep8Naming,PyMethodParameters
+    @escapes_args
     @checks_for_word_break
     def handle_BR(state: ManProcessState, *args, **__):
         """Чередование Bold и Roman."""
@@ -161,6 +172,7 @@ class Man2HtmlTranslator(object):
                                           tag_from_raw_string(span), args))
 
     # noinspection PyPep8Naming,PyMethodParameters
+    @escapes_args
     @checks_for_word_break
     def handle_RB(state: ManProcessState, *args, **__):
         """Чередование Roman и Bold."""
@@ -168,6 +180,7 @@ class Man2HtmlTranslator(object):
                                           tag_from_raw_string(b), args))
 
     # noinspection PyPep8Naming,PyMethodParameters
+    @escapes_args
     @checks_for_word_break
     def handle_IR(state: ManProcessState, *args, **__):
         """Чередование Italic и Roman."""
@@ -175,6 +188,7 @@ class Man2HtmlTranslator(object):
                                           tag_from_raw_string(span), args))
 
     # noinspection PyPep8Naming,PyMethodParameters
+    @escapes_args
     @checks_for_word_break
     def handle_RI(state: ManProcessState, *args, **__):
         """Чередование Roman и Italic"""
@@ -227,7 +241,9 @@ class Man2HtmlTranslator(object):
         prev_nodes_num = len(state.nodes)
         while state.has_more_lines() and empty(state.paragraph):
             self.accept_line(state)
-        tag = dt(list(state.paragraph))
+        tag = dt()
+        for child in state.paragraph.children:
+            tag.add_raw_string(child)
         state.reset_paragraph()
 
         while state.has_more_lines():
@@ -302,13 +318,11 @@ class Man2HtmlTranslator(object):
     def accept_line(self, state: ManProcessState, args: tuple=None):
         if args is None:
             line = state.pop_line()
-            args = list(self.args_parser.parse_args(line))
+            args = expand_string(state, line)
 
         if empty(args):
             state.close_paragraph()
             return
-
-        args = self._expand_args(state, args)
 
         if args[0] not in self.commands.keys():
             if args[0][0] == '.':
@@ -326,9 +340,10 @@ class Man2HtmlTranslator(object):
             state.close_paragraph()
         man_command.action(state, *args)
 
+    # noinspection PyMethodParameters
     @checks_for_word_break
     def default_handle(state: ManProcessState, *args):
-        state.paragraph.add_raw_string(" ".join(args))
+        state.paragraph.add_raw_string(" ".join(map(escape, args)))
 
     def _calc_condition(self, state: ManProcessState, condition):
         if condition[0] == '!':
@@ -342,9 +357,6 @@ class Man2HtmlTranslator(object):
 
         return False
         # raise NotImplementedError()  # todo
-
-    def _expand_args(self, state: ManProcessState, args: list):
-        return [expand_arg(state, arg) for arg in args]
 
 
 class Command:
