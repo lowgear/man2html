@@ -29,10 +29,6 @@ def alternate_map(first_func, second_func, sequence):
         count += 1
 
 
-def identical(x):
-    return x
-
-
 def checks_for_word_break(func):
     # noinspection PyUnusedLocal
     @wraps(func)
@@ -343,7 +339,7 @@ class Man2HtmlTranslator(object):
     # noinspection PyMethodParameters
     @checks_for_word_break
     def default_handle(state: ManProcessState, *args):
-        state.paragraph.add_raw_string(" ".join(map(escape, args)))
+        state.add_to_paragraph(" ".join(map(escape, args)))
 
     def _calc_condition(self, state: ManProcessState, condition):
         if condition[0] == '!':

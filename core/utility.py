@@ -5,6 +5,10 @@ def empty(o):
     return len(o) == 0
 
 
+def identical(x):
+    return x
+
+
 def first(iterable):
     for i in iterable:
         return i

@@ -60,8 +60,7 @@ def register_expansion_2(state: ManProcessState, builder: list, match):
 @registered_macro(r"\\f([BIPR])")
 def inline_set_font(state: ManProcessState, builder: list, match):
     font_name = match.group(1).strip('.')
-    if register_name in state.registers.keys():  # todo continue from here
-        builder.append(state.registers[register_name])
+    state.set_current_font(font_name)
 
 
 @as_(tuple)

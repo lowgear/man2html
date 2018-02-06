@@ -1,4 +1,4 @@
-from dominate.tags import p
+from dominate.tags import p, b, i
 
 from core.settings import DEFAULT_SETTINGS, TranslationModes
 from core.utility import empty
@@ -9,6 +9,7 @@ after_margin_property = "-webkit-margin-after"
 
 class ManProcessState(object):
     def __init__(self, lines):
+        self.font = "R"
         self.title = ""
         self.section = ""
         self.date = ""
@@ -51,3 +52,16 @@ class ManProcessState(object):
             after_margin_property + ":" +
             str(self.inter_paragraph_indent) + "em",
         ])
+
+    def set_current_font(self, font_name):
+        pass  # todo
+
+    def add_to_paragraph(self, string: str):
+        font = self.font
+        if font == "R" or font == "P":
+            self.paragraph.add_raw_string(string)
+            return
+        if font == "B":
+            tag = b
+        elif font == "I":
+            tag = i  # todo continue from here
