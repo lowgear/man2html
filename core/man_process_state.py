@@ -54,14 +54,7 @@ class ManProcessState(object):
         ])
 
     def set_current_font(self, font_name):
-        pass  # todo
+        self.font = font_name
 
     def add_to_paragraph(self, string: str):
-        font = self.font
-        if font == "R" or font == "P":
-            self.paragraph.add_raw_string(string)
-            return
-        if font == "B":
-            tag = b
-        elif font == "I":
-            tag = i  # todo continue from here
+        self.paragraph.add_raw_string(string)  # todo log

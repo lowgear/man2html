@@ -1,5 +1,5 @@
 import datetime
-from functools import wraps
+from functools import wraps, partial
 
 import dominate
 from dominate import document
@@ -9,7 +9,7 @@ from core.args_parser import ArgsParser
 from core.html_utils import escape
 from core.man_process_state import ManProcessState
 from core.settings import DEFAULT_SETTINGS, TranslationModes
-from core.string_expander import expand_string
+from core.string_utils import expand_string, split_args
 from core.utility import empty, first
 
 dot_like_punctuation = ',.?!;:'
@@ -44,8 +44,9 @@ def tag_from_raw_string(func):
     @wraps(func)
     def wrapped(*args, **__):
         tag = func()
-        tag.add_raw_string(" ".join(args))
+        tag.add_raw_string(escape(" ".join(args)))
         return tag
+
     return wrapped
 
 
@@ -53,6 +54,7 @@ def escapes_args(func):
     @wraps(func)
     def wrapped(self, state: ManProcessState, *args, **kwargs):
         return func(self, state, *map(escape, args), **kwargs)
+
     return wrapped
 
 
@@ -264,7 +266,7 @@ class Man2HtmlTranslator(object):
             state.nodes.insert(prev_nodes_num, element)
 
     def extract_command(self, state):
-        cur_args = self.args_parser.parse_args(state.peek_line())
+        cur_args = split_args(state.peek_line())
         return first(cur_args)
 
     # noinspection PyPep8Naming
@@ -311,10 +313,11 @@ class Man2HtmlTranslator(object):
     def register_macros(self, macros_name: str, macros_lines: list):
         pass  # todo actually register macros
 
-    def accept_line(self, state: ManProcessState, args: tuple=None):
+    def accept_line(self, state: ManProcessState, args: tuple = None):
         if args is None:
             line = state.pop_line()
-            args = expand_string(state, line)
+            args = split_args(line)
+            args = tuple(map(partial(expand_string, state), args))
 
         if empty(args):
             state.close_paragraph()
@@ -339,7 +342,7 @@ class Man2HtmlTranslator(object):
     # noinspection PyMethodParameters
     @checks_for_word_break
     def default_handle(state: ManProcessState, *args):
-        state.add_to_paragraph(" ".join(map(escape, args)))
+        state.add_to_paragraph(" ".join(args))
 
     def _calc_condition(self, state: ManProcessState, condition):
         if condition[0] == '!':

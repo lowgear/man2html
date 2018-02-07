@@ -12,9 +12,9 @@ HTML_ESCAPES = {
 @as_(''.join)
 def escape(string: str):
     for char in string:
-        if char in SYNTAX_CHARS:
-            yield SYNTAX_CHARS[char]
-        elif char in HTML_ESCAPES:
+        # if char in SYNTAX_CHARS:
+        #     yield SYNTAX_CHARS[char]
+        if char in HTML_ESCAPES:
             yield HTML_ESCAPES[char]
         else:
             yield char

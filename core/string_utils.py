@@ -6,6 +6,13 @@ from core.utility import as_
 
 COMMENT_CHAR = '"'
 DOUBLE_QUOTE = '"'
+SYNTAX_CHARS = {'<': "&lt;",
+                '>': "&gt;",
+                '&': "&amp;", }
+HTML_ESCAPES = {
+            '\u2006': "&#x2006;",
+            '\u2212': "&#x2212;",
+        }
 
 macros = []
 
@@ -19,53 +26,120 @@ def registered_macro(regex: str):
 
 
 @registered_macro(r"\\e")
-def backslash(_: ManProcessState, builder: list, __):
-    builder.append("\\")
+def backslash(_: ManProcessState, __):
+    return "\\"
 
 
 @registered_macro(r"\\-")
-def minus_sign(_: ManProcessState, builder: list, __):
-    builder.append("\u2212")
+def minus_sign(_: ManProcessState, __):
+    return "&#x2212;"
 
 
 @registered_macro(r"\\\|")
-def non_breaking_space(_: ManProcessState, builder: list, __):
-    builder.append("\u2006")
+def non_breaking_space(_: ManProcessState, __):
+    return "&#x2006;"
 
 
 @registered_macro(r"\\ ")
-def space(_: ManProcessState, builder: list, __):
-    builder.append(" ")
+def space(_: ManProcessState, __):
+    return " "
 
 
 @registered_macro(r"\\c")
-def backslash(_: ManProcessState, __: list, ___):
+def continue_(_: ManProcessState, __):
     pass  # todo actually do what?
 
 
 @registered_macro(r"\\n([a-zA-Z.])")
-def register_expansion(state: ManProcessState, builder: list, match):
+def register_expansion(state: ManProcessState, match):
     register_name = match.group(1)
     if register_name in state.registers.keys():
-        builder.append(state.registers[register_name])
+        return state.registers[register_name]
 
 
 @registered_macro(r"\\n\(([a-zA-Z.]{2})")
-def register_expansion_2(state: ManProcessState, builder: list, match):
+def register_expansion_2(state: ManProcessState, match):
     register_name = match.group(1).strip('.')
     if register_name in state.registers.keys():
-        builder.append(state.registers[register_name])
+        return state.registers[register_name]
+
+
+font_modifiers = {"R": None,
+                  "P": None,
+                  "B": "b",
+                  "I": "i",
+                  "CW": "code"}
 
 
 @registered_macro(r"\\f([BIPR])")
-def inline_set_font(state: ManProcessState, builder: list, match):
-    font_name = match.group(1).strip('.')
-    state.set_current_font(font_name)
+@as_("".join)
+def inline_set_font(_: ManProcessState, match):
+    font = match.group(1).strip('.')
+    for tag in font_modifiers.values():
+        if tag:
+            yield "</" + tag + ">"
+    if font in font_modifiers.keys() and font_modifiers[font]:
+        yield "<" + font_modifiers[font] + ">"
+    else:
+        pass  # todo log
+    # if font == "R" or font == "P":
+    #     return "</b></i>"
+    # elif font == "B":
+    #     return "<b></i>"
+    # elif font == "I":
+    #     return "</b><i>"
+    # else:
+    #     return "</b></i>"  # todo log
+
+
+@registered_macro(r"\\f\(([A-Za-z.]{2})")
+@as_("".join)
+def inline_set_font(_: ManProcessState, match):
+    font = match.group(1).strip('.')
+    for tag in font_modifiers.values():
+        if tag:
+            yield "</" + tag + ">"
+    if font in font_modifiers.keys() and font_modifiers[font]:
+        yield "<" + font_modifiers[font] + ">"
+    else:
+        pass  # todo log
+
+
+@as_("".join)
+def expand_string(state: ManProcessState, line: str):
+    line = ''.join(filter(lambda c: c != '\r' and c != '\n', line))
+
+    i = -1
+    while i + 1 < len(line):
+        i += 1
+        char = line[i]
+
+        macro_used = False
+        for reg, macro in macros:
+            match = reg.match(line, i)
+            if not match:
+                continue
+            macro_used = True
+            i += match.end() - match.start() - 1
+            char = macro(state, match)
+            break
+
+        if macro_used:
+            if char:
+                yield char
+            continue
+
+        if char in SYNTAX_CHARS:
+            yield SYNTAX_CHARS[char]
+        elif char in HTML_ESCAPES:
+            yield HTML_ESCAPES[char]
+        else:
+            yield char
 
 
 @as_(tuple)
-def expand_string(state: ManProcessState, line: str):
-    line = ''.join(filter(lambda c: c != '\r' and c != '\n', line))
+def split_args(string: str):
+    string = ''.join(filter(lambda c: c != '\r' and c != '\n', string))
 
     arg_builder = []
     escaped = False
@@ -73,23 +147,7 @@ def expand_string(state: ManProcessState, line: str):
     can_open_quotes = True
     arg_count = 0
 
-    i = -1
-    while i + 1 < len(line):
-        i += 1
-        char = line[i]
-
-        macro_applied = False
-        for reg, macro in macros:
-            match = reg.match(line, i)
-            if not match:
-                continue
-            macro_applied = True
-            i += match.end() - match.start() - 1
-            macro(state, arg_builder, match)
-
-        if macro_applied:
-            continue
-
+    for char in string:
         if escaped:
             escaped = False
 
@@ -130,9 +188,6 @@ def expand_string(state: ManProcessState, line: str):
 
         arg_builder.append(char)
         can_open_quotes = False
-
-    if double_quoted:
-        arg_builder = [DOUBLE_QUOTE] + arg_builder
 
     if len(arg_builder):
         yield ''.join(arg_builder)
