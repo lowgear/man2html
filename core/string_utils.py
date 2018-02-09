@@ -45,6 +45,11 @@ def space(_: ManProcessState, __):
     return " "
 
 
+@registered_macro(r"\\\(co")
+def copyright(_: ManProcessState, __):
+    return "&#x00A9;"
+
+
 @registered_macro(r"\\c")
 def continue_(_: ManProcessState, __):
     pass  # todo actually do what?
@@ -54,14 +59,20 @@ def continue_(_: ManProcessState, __):
 def register_expansion(state: ManProcessState, match):
     register_name = match.group(1)
     if register_name in state.registers.keys():
-        return state.registers[register_name]
+        res = state.registers[register_name]
+        if not isinstance(res, str):
+            res = str(res)
+        return res
 
 
 @registered_macro(r"\\n\(([a-zA-Z.]{2})")
 def register_expansion_2(state: ManProcessState, match):
     register_name = match.group(1).strip('.')
     if register_name in state.registers.keys():
-        return state.registers[register_name]
+        res = state.registers[register_name]
+        if not isinstance(res, str):
+            res = str(res)
+        return res
 
 
 font_modifiers = {"R": None,
@@ -76,9 +87,9 @@ font_modifiers = {"R": None,
 def inline_set_font(_: ManProcessState, match):
     font = match.group(1).strip('.')
     for tag in font_modifiers.values():
-        if tag:
+        if tag is not None:
             yield "</" + tag + ">"
-    if font in font_modifiers.keys() and font_modifiers[font]:
+    if font in font_modifiers.keys() and font_modifiers[font] is not None:
         yield "<" + font_modifiers[font] + ">"
     else:
         pass  # todo log
@@ -97,9 +108,9 @@ def inline_set_font(_: ManProcessState, match):
 def inline_set_font(_: ManProcessState, match):
     font = match.group(1).strip('.')
     for tag in font_modifiers.values():
-        if tag:
+        if tag is not None:
             yield "</" + tag + ">"
-    if font in font_modifiers.keys() and font_modifiers[font]:
+    if font in font_modifiers.keys() and font_modifiers[font] is not None:
         yield "<" + font_modifiers[font] + ">"
     else:
         pass  # todo log
@@ -117,7 +128,7 @@ def expand_string(state: ManProcessState, line: str):
         macro_used = False
         for reg, macro in macros:
             match = reg.match(line, i)
-            if not match:
+            if match is None:
                 continue
             macro_used = True
             i += match.end() - match.start() - 1
@@ -125,7 +136,7 @@ def expand_string(state: ManProcessState, line: str):
             break
 
         if macro_used:
-            if char:
+            if char is not None:
                 yield char
             continue
 

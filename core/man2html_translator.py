@@ -2,6 +2,9 @@ import datetime
 from functools import wraps, partial
 
 import dominate
+import re
+
+import math
 from dominate import document
 from dominate.tags import *
 
@@ -13,6 +16,10 @@ from core.string_utils import expand_string, split_args
 from core.utility import empty, first
 
 dot_like_punctuation = ',.?!;:'
+number_regex = re.compile(r"(\d+|\d+.\d*|\d*.\d+)")
+comparision_regex = re.compile(
+    '^' + number_regex.pattern + r"(=|<|>|<=|>=|!=|==)" +
+    number_regex.pattern + '$')
 
 
 def now():
@@ -64,7 +71,7 @@ class Man2HtmlTranslator(object):
         self.args_parser = args_parser
         self.commands = dict()
 
-        self.strict_mode = strict_mode
+        self.is_strict_mode = strict_mode
 
         self.apply_default_setting()
 
@@ -132,6 +139,8 @@ class Man2HtmlTranslator(object):
         state.date = date
         state.source = man_source
         state.manual = manual
+
+        state.relative_indents.clear()
 
     # noinspection PyPep8Naming
     def handle_SH(self, state: ManProcessState, *args, **__):
@@ -236,10 +245,14 @@ class Man2HtmlTranslator(object):
             except ValueError:  # todo log
                 indent = 5
 
+        dl_style = state.paragraph.attributes["style"]
+        state.reset_paragraph()
+
         prev_nodes_num = len(state.nodes)
         while state.has_more_lines() and empty(state.paragraph):
             self.accept_line(state)
         tag = dt()
+        tag.attributes["style"] = state.paragraph.attributes["style"]
         for child in state.paragraph.children:
             tag.add_raw_string(child)
         state.reset_paragraph()
@@ -253,7 +266,7 @@ class Man2HtmlTranslator(object):
         par = dd(state.paragraph)
         state.reset_paragraph()
 
-        par.attributes["text-indent"] = str(indent) + "en"
+        par.attributes["text-indent"] = str(indent) + "en"  # todo units?
         if prev_nodes_num != 0 and \
                 isinstance(state.nodes[prev_nodes_num - 1], dl):
             element = state.nodes[prev_nodes_num - 1]
@@ -261,6 +274,7 @@ class Man2HtmlTranslator(object):
             element.add(par)
         else:
             element = dl()
+            element.attributes["style"] = dl_style
             element.add(tag)
             element.add(par)
             state.nodes.insert(prev_nodes_num, element)
@@ -271,7 +285,7 @@ class Man2HtmlTranslator(object):
 
     # noinspection PyPep8Naming
     def handle_PD(self, state: ManProcessState, indent=None, *_, **__):
-        """Отступ перед первой строкой параграфа."""
+        """Отступ между параграфами."""
         if indent is None:
             indent = \
                 DEFAULT_SETTINGS[state.translation_mode].inter_paragraph_indent
@@ -289,6 +303,66 @@ class Man2HtmlTranslator(object):
         """Строка на один пункт меньше."""
         pass  # todo
 
+    def handle_nr(self, state: ManProcessState, register: str = None,
+                  value: str = None,
+                  auto_inc: str = None, *_, **__):
+        if register is None or value is None:
+            return  # todo log
+        try:
+            value = int(value)
+        except ValueError:
+            return  # todo log
+        if auto_inc is not None:
+            raise NotImplementedError()
+            # noinspection PyUnreachableCode
+            try:
+                auto_inc = int(auto_inc)
+            except ValueError:
+                # auto_inc не является необходимым аргументом
+                pass  # todo log or break on strict mode or something
+        else:
+            auto_inc = 0
+
+        state.registers[register] = value
+        # todo handle auto_inc
+
+    def handle_sp(self, state: ManProcessState, value: str = None, *_, **__):
+        if value is not None:
+            try:
+                value = int(math.ceil(float(value)))
+            except ValueError:
+                return  # todo log
+        else:
+            value = 1
+
+        if not empty(state.paragraph.children) and not str(
+                state.paragraph.children[-1]).endswith(str(br())):
+            state.paragraph.add(br())
+        for i in range(value):
+            state.paragraph.add(br())
+
+    # noinspection PyPep8Naming
+    def handle_RS(self, state: ManProcessState, value: str = None, *_, **__):
+        if value is None:
+            value = 5 if state.translation_mode == TranslationModes.NROFF \
+                else 7.2
+        else:
+            try:
+                value = float(value)
+            except ValueError:
+                value = 5 if state.translation_mode == TranslationModes.NROFF \
+                    else 7.2  # todo log
+
+        state.relative_indents.append(value)
+
+    # noinspection PyPep8Naming
+    def handle_RE(self, state: ManProcessState, value: str = None, *_, **__):
+        if value is None:
+            state.relative_indents.pop()
+        else:
+            raise NotImplementedError()  # todo
+
+
     def apply_default_setting(self):
         self.commands[".\\\""] = Command(self.handle_comment, False)
         self.commands["'\\\""] = Command(self.handle_translation_mode, False)
@@ -297,6 +371,7 @@ class Man2HtmlTranslator(object):
         self.commands[".SS"] = Command(self.handle_SS, True)
         self.commands[".B"] = Command(self.handle_B, False)
         self.commands[".I"] = Command(self.handle_I, False)
+        self.commands[".FN"] = Command(self.handle_I, False)  # todo alias?
         self.commands[".BR"] = Command(self.handle_BR, False)
         self.commands[".RB"] = Command(self.handle_RB, False)
         self.commands[".RI"] = Command(self.handle_RI, False)
@@ -309,6 +384,10 @@ class Man2HtmlTranslator(object):
         self.commands[".TP"] = Command(self.handle_TP, True)
         self.commands[".PD"] = Command(self.handle_PD, False)
         self.commands[".SM"] = Command(self.handle_SM, False)
+        self.commands[".nr"] = Command(self.handle_nr, False)
+        self.commands[".sp"] = Command(self.handle_sp, False)
+        self.commands[".RS"] = Command(self.handle_RS, True, True)
+        self.commands[".RE"] = Command(self.handle_RE, True, True)
 
     def register_macros(self, macros_name: str, macros_lines: list):
         pass  # todo actually register macros
@@ -327,7 +406,7 @@ class Man2HtmlTranslator(object):
             if args[0][0] == '.':
                 import sys
                 print(' '.join(args), file=sys.stderr)
-            if args[0][0] == '.' and self.strict_mode:
+            if args[0][0] == '.' and self.is_strict_mode:
                 raise NotImplementedError(' '.join(args))
             self.default_handle(state, *args)
             return
@@ -344,7 +423,7 @@ class Man2HtmlTranslator(object):
     def default_handle(state: ManProcessState, *args):
         state.add_to_paragraph(" ".join(args))
 
-    def _calc_condition(self, state: ManProcessState, condition):
+    def _calc_condition(self, state: ManProcessState, condition: str):
         if condition[0] == '!':
             return not self._calc_condition(state, condition[1:])
         if condition == "n":
@@ -353,6 +432,11 @@ class Man2HtmlTranslator(object):
             return state.translation_mode == TranslationModes.TROFF
         if condition[0] == 'r':
             return condition[1:] in state.registers.keys()
+        match = comparision_regex.match(condition)
+        if match is not None:
+            if match.group(2) == '=':
+                condition = condition.replace('=', '==')
+            return eval(condition)
 
         return False
         # raise NotImplementedError()  # todo

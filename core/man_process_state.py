@@ -3,8 +3,9 @@ from dominate.tags import p, b, i
 from core.settings import DEFAULT_SETTINGS, TranslationModes
 from core.utility import empty
 
-before_margin_property = "-webkit-margin-before"
-after_margin_property = "-webkit-margin-after"
+before_margin = "-webkit-margin-before"
+after_margin = "-webkit-margin-after"
+margin_left = "margin-left"
 
 
 class ManProcessState(object):
@@ -21,8 +22,10 @@ class ManProcessState(object):
         self.nodes = list()
         self.inter_paragraph_indent = DEFAULT_SETTINGS[
             self.translation_mode].inter_paragraph_indent
-        self.reset_paragraph()
         self.registers = dict()
+        self.relative_indents = []
+
+        self.reset_paragraph()
 
     def has_more_lines(self):
         return self.index < len(self.lines)
@@ -47,10 +50,10 @@ class ManProcessState(object):
         # noinspection PyAttributeOutsideInit
         self.paragraph = p()
         self.paragraph.attributes["style"] = ";".join([
-            before_margin_property + ":" +
-            str(self.inter_paragraph_indent) + "em",
-            after_margin_property + ":" +
-            str(self.inter_paragraph_indent) + "em",
+            before_margin + ":" + str(self.inter_paragraph_indent) + "v",
+            after_margin + ":" + str(self.inter_paragraph_indent) + "v",
+            margin_left + ":" + "{:.1f}".format(sum(self.relative_indents)) +
+            "en",
         ])
 
     def set_current_font(self, font_name):
