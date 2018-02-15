@@ -1,11 +1,9 @@
 import argparse
 import gzip
 import logging
-import sys
-
-import pathlib
-
 import os
+import pathlib
+import sys
 
 from core.args_parser import ArgsParser
 from core.man2html_translator import Man2HtmlTranslator

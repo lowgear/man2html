@@ -1,15 +1,8 @@
-class ArgsParser(object):
-    def __init__(self):
-        self.ESCAPE_CHAR = '\\'
-        self.DOUBLE_QUOTE = '"'
+ESCAPE_CHAR = '\\'
 
-        self.ESCAPED_MEANING = {
-            'e': '\\',
-            '|': "",  # "\u2006",
-            '-': "-",
-            ' ': " ",
-            'c': ""
-        }
+
+class ArgsParser(object):
+    DOUBLE_QUOTE = '"'
 
     def parse_args(self, line: str):
         """Парсит строку на аргументы Man pages. Двойные кавычки,
@@ -25,12 +18,10 @@ class ArgsParser(object):
         for char in line:
             if escaped:
                 escaped = False
-                if char in self.ESCAPED_MEANING.keys():
-                    current_arg_builder.append(self.ESCAPED_MEANING[char])
-                    continue
-                current_arg_builder.append(self.ESCAPE_CHAR)
+                current_arg_builder.append(ESCAPE_CHAR + char)
+                continue
 
-            if char == self.ESCAPE_CHAR:
+            if char == ESCAPE_CHAR:
                 escaped = True
                 continue
 

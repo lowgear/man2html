@@ -1,12 +1,12 @@
+import datetime
 import unittest
 
-import datetime
 import dominate
-
-from core.args_parser import ArgsParser
-import core.man2html_translator as man2html_translator
-from core.man_process_state import ManProcessState
 from dominate.tags import *
+
+import core.man2html_translator as man2html_translator
+from core.args_parser import ArgsParser
+from core.man_process_state import ManProcessState
 
 
 class Man2HtmlProcessorTests(unittest.TestCase):
